@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Air Quality Monitoring Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            transition: background-color 0.5s;
+        }
+        h1 {
+            color: #333;
+        }
+        .data-display {
+            font-size: 24px;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+        .good {
+            background-color: green;
+        }
+        .moderate {
+            background-color: yellow;
+            color: black;
+        }
+        .poor {
+            background-color: red;
+        }
+        .unknown {
+            background-color: gray;
+        }
+        .disconnected {
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Smart Air Quality Monitoring System</h1>
+    <div id="data-container">
+        <div id="sensor-value">Sensor Value: --</div>
+        <div id="aqi-status">AQI Status: --</div>
+    </div>
+    <script>
+        function updateData() {
+            fetch('/data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('sensor-value').innerText = 'Sensor Value: ' + data.sensor_value;
+                    document.getElementById('aqi-status').innerText = 'AQI Status: ' + data.aqi_status;
+                    
+                    // Remove previous classes
+                    document.body.className = '';
+                    
+                    // Add class based on status
+                    let statusClass = 'unknown';
+                    if (data.aqi_status === 'GOOD') {
+                        statusClass = 'good';
+                    } else if (data.aqi_status === 'MODERATE') {
+                        statusClass = 'moderate';
+                    } else if (data.aqi_status === 'POOR') {
+                        statusClass = 'poor';
+                    } else if (data.aqi_status === 'DISCONNECTED') {
+                        statusClass = 'disconnected';
+                    }
+                    document.body.classList.add(statusClass);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById('sensor-value').innerText = 'Sensor Value: Disconnected';
+                    document.getElementById('aqi-status').innerText = 'AQI Status: Disconnected';
+                    document.body.className = 'disconnected';
+                });
+        }
+        
+        // Update data every 2 seconds
+        setInterval(updateData, 2000);
+        
+        // Initial update
+        updateData();
+    </script>
+</body>
+</html>
