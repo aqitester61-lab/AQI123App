@@ -4,87 +4,746 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Air Quality Monitoring Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background 1s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+        }
+
+        body.good {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background-attachment: fixed;
+        }
+
+        body.moderate {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background-attachment: fixed;
+        }
+
+        body.poor {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            background-attachment: fixed;
+        }
+
+        body.disconnected {
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
             text-align: center;
-            padding: 20px;
-            transition: background-color 0.5s;
+            color: white;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
-        h1 {
-            color: #333;
+
+        .header h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
         }
-        .data-display {
-            font-size: 24px;
-            margin: 20px 0;
-            padding: 20px;
-            border-radius: 10px;
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .main-display {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 50px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sensor-value-display {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .sensor-value-display .label {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+        }
+
+        .sensor-value-display .value {
+            font-size: 4em;
+            font-weight: 700;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Gauge Meter */
+        .gauge-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .gauge {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #00c651 0deg 90deg,
+                #ffd700 90deg 180deg,
+                #ff6b6b 180deg 270deg,
+                #999 270deg 360deg
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .gauge-inner {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             color: white;
         }
-        .good {
-            background-color: green;
+
+        .gauge-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .moderate {
-            background-color: yellow;
-            color: black;
+
+        .gauge-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin: 10px 0;
         }
-        .poor {
-            background-color: red;
+
+        .gauge-unit {
+            font-size: 0.8em;
+            opacity: 0.7;
         }
-        .unknown {
-            background-color: gray;
+
+        .gauge-needle {
+            position: absolute;
+            width: 8px;
+            height: 110px;
+            background: white;
+            border-radius: 4px;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            margin-left: -4px;
+            transition: transform 0.5s ease-out;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
-        .disconnected {
-            background-color: black;
+
+        /* Status Card */
+        .status-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-title {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-value {
+            font-size: 2em;
+            font-weight: 700;
+            padding: 15px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .status-value.good {
+            background: linear-gradient(135deg, rgba(0, 198, 81, 0.4), rgba(56, 239, 125, 0.4));
+            color: #38ef7d;
+        }
+
+        .status-value.moderate {
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.4), rgba(245, 87, 108, 0.4));
+            color: #f5576c;
+        }
+
+        .status-value.poor {
+            background: linear-gradient(135deg, rgba(250, 112, 154, 0.4), rgba(254, 225, 64, 0.4));
+            color: #fee140;
+        }
+
+        .status-value.disconnected {
+            background: linear-gradient(135deg, rgba(100, 100, 100, 0.4), rgba(50, 50, 50, 0.4));
+            color: #cccccc;
+        }
+
+        /* Grid Layout */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .info-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-box-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .info-box-title {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-box-value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            animation: blink 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #38ef7d;
+            animation: none;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* AQI Range Bar */
+        .aqi-range-bar {
+            background: linear-gradient(to right, #00c651 0%, #00c651 33.33%, #ffd700 33.33%, #ffd700 66.67%, #ff6b6b 66.67%, #ff6b6b 100%);
+            height: 40px;
+            border-radius: 20px;
+            position: relative;
+            margin: 30px 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .aqi-range-labels {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+            padding: 0 20px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .aqi-range-label {
+            flex: 1;
+            text-align: center;
+        }
+
+        .aqi-arrow {
+            position: absolute;
+            top: -10px;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 20px solid rgba(255, 255, 255, 0.95);
+            filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3));
+            transition: left 0.5s ease-out;
+        }
+
+        .aqi-value-marker {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8em;
+            transition: left 0.5s ease-out;
+            white-space: nowrap;
+        }
+
+        /* Health Advisory Section */
+        .health-advisory {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 40px;
+            margin: 30px 0;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .advisory-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .advisory-message {
+            font-size: 1.3em;
+            line-height: 1.8;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .advisory-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .action-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .action-item:hover {
+            transform: translateX(10px);
+        }
+
+        .action-icon {
+            font-size: 1.8em;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .action-text {
+            text-align: left;
+            font-size: 0.95em;
+        }
+
+        /* Billboard Style */
+        .billboard-wrapper {
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5em;
+            }
+
+            .main-display {
+                padding: 30px;
+            }
+
+            .sensor-value-display .value {
+                font-size: 3em;
+            }
+
+            .gauge {
+                width: 200px;
+                height: 200px;
+            }
+
+            .gauge-inner {
+                width: 170px;
+                height: 170px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .connection-status {
+                top: 10px;
+                right: 10px;
+                font-size: 0.8em;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Smart Air Quality Monitoring System</h1>
-    <div id="data-container">
-        <div id="sensor-value">Sensor Value: --</div>
-        <div id="aqi-status">AQI Status: --</div>
+    <div class="connection-status">
+        <span class="status-indicator"></span>
+        <span id="connection-text">Connecting...</span>
     </div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-wind"></i> AQI Monitor</h1>
+            <p>Real-Time Air Quality Detection System</p>
+        </div>
+
+        <div class="main-display">
+            <div class="sensor-value-display">
+                <div class="label">MQ-135 Sensor Reading</div>
+                <div class="value" id="sensor-value">--</div>
+            </div>
+
+            <div class="gauge-container">
+                <div class="gauge">
+                    <div class="gauge-needle" id="gauge-needle"></div>
+                    <div class="gauge-inner">
+                        <div class="gauge-label">Air Quality</div>
+                        <div class="gauge-value" id="gauge-value">--</div>
+                        <div class="gauge-unit">PPM</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="status-title"><i class="fas fa-info-circle"></i> Current Status</div>
+                <div class="status-value" id="aqi-status">UNKNOWN</div>
+            </div>
+
+            <!-- AQI Range Bar with Arrow -->
+            <div class="billboard-wrapper">
+                <div style="text-align: center; margin-bottom: 15px; color: white; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fas fa-chart-line"></i> Air Quality Index Scale
+                </div>
+                <div class="aqi-range-bar">
+                    <div class="aqi-arrow" id="aqi-arrow"></div>
+                    <div class="aqi-value-marker" id="aqi-marker">--</div>
+                    <div class="aqi-range-labels">
+                        <div class="aqi-range-label">GOOD<br><small>0-100</small></div>
+                        <div class="aqi-range-label">MODERATE<br><small>100-200</small></div>
+                        <div class="aqi-range-label">POOR<br><small>200+</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Advisory Section -->
+            <div class="health-advisory" id="advisory-section">
+                <div class="advisory-title" id="advisory-title">Air Quality Advisory</div>
+                <div class="advisory-message" id="advisory-message">Initializing...</div>
+                <div class="advisory-actions" id="advisory-actions"></div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-gauge-high"></i></div>
+                    <div class="info-box-title">Min Reading</div>
+                    <div class="info-box-value" id="min-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-arrow-up"></i></div>
+                    <div class="info-box-title">Max Reading</div>
+                    <div class="info-box-value" id="max-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-history"></i></div>
+                    <div class="info-box-title">Updates</div>
+                    <div class="info-box-value" id="update-count">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-icon"><i class="fas fa-plug"></i></div>
+                    <div class="info-box-title">Connection</div>
+                    <div class="info-box-value" id="connection-value">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let minValue = Infinity;
+        let maxValue = -Infinity;
+        let updateCount = 0;
+        let isConnected = false;
+
+        const advisories = {
+            GOOD: {
+                title: '✅ AIR QUALITY IS GOOD',
+                color: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                message: 'Air quality is satisfactory. It\'s a great day to be outdoors!',
+                actions: [
+                    { icon: '🚴', text: 'Perfect for outdoor activities and exercise' },
+                    { icon: '🌳', text: 'Excellent for parks and recreational areas' },
+                    { icon: '👨‍👩‍👧‍👦', text: 'Safe for all age groups and sensitive individuals' },
+                    { icon: '📱', text: 'No air quality restrictions in effect' }
+                ]
+            },
+            MODERATE: {
+                title: '⚠️ MODERATE AIR QUALITY',
+                color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                message: 'Air quality is moderate. Some precautions recommended. Consider reducing outdoor activities.',
+                actions: [
+                    { icon: '🚗', text: 'Reduce vehicle traffic when possible' },
+                    { icon: '🏭', text: 'Encourage use of public transportation' },
+                    { icon: '🚴', text: 'Avoid strenuous outdoor activities' },
+                    { icon: '😷', text: 'Sensitive groups should limit exposure' },
+                    { icon: '🌱', text: 'Increase green spaces and tree planting' },
+                    { icon: '⚡', text: 'Use energy-efficient appliances' }
+                ]
+            },
+            POOR: {
+                title: '🚨 POOR AIR QUALITY - HEALTH ALERT',
+                color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                message: 'Air quality is POOR. Serious health risks present. Immediate action recommended.',
+                actions: [
+                    { icon: '🚫', text: 'AVOID ALL OUTDOOR ACTIVITIES' },
+                    { icon: '🚗', text: 'REDUCE VEHICLE TRAFFIC - Use alternatives' },
+                    { icon: '🏭', text: 'RESTRICT INDUSTRIAL OPERATIONS' },
+                    { icon: '🚀', text: 'ENCOURAGE PUBLIC TRANSPORT USAGE' },
+                    { icon: '🏥', text: 'STAY INDOORS & USE AIR PURIFIERS' },
+                    { icon: '📢', text: 'PUBLIC HEALTH WARNING IN EFFECT' },
+                    { icon: '🌾', text: 'MINIMIZE DUST & POLLUTION SOURCES' },
+                    { icon: '⛔', text: 'CONSTRUCTION & DUST CONTROL MEASURES' }
+                ]
+            }
+        };
+
+        function updateGaugeNeedle(value) {
+            const maxSensorValue = 500;
+            const maxAngle = 270;
+            const angle = (value / maxSensorValue) * maxAngle - 135;
+            document.getElementById('gauge-needle').style.transform = `rotate(${angle}deg)`;
+        }
+
+        function updateAQIArrow(value) {
+            // Map sensor value to position on range bar
+            // Equal thirds: GOOD: 0-100 (0-33.33%), MODERATE: 100-200 (33.33-66.67%), POOR: 200+ (66.67-100%)
+            let percentage;
+            
+            if (value <= 100) {
+                // GOOD range (0-100) maps to 0-33.33%
+                percentage = (value / 100) * 33.33;
+            } else if (value <= 200) {
+                // MODERATE range (100-200) maps to 33.33-66.67%
+                percentage = 33.33 + ((value - 100) / 100) * 33.34;
+            } else {
+                // POOR range (200+) maps to 66.67-100%
+                const poorValue = Math.min(value - 200, 300);
+                percentage = 66.67 + (poorValue / 300) * 33.33;
+            }
+            
+            // Clamp between 0 and 100
+            percentage = Math.max(0, Math.min(100, percentage));
+            
+            document.getElementById('aqi-arrow').style.left = percentage + '%';
+            document.getElementById('aqi-marker').style.left = percentage + '%';
+            document.getElementById('aqi-marker').innerText = value + ' PPM';
+        }
+
+        function getAQICategory(sensorValue) {
+            if (sensorValue <= 100) return 'GOOD';
+            if (sensorValue <= 200) return 'MODERATE';
+            return 'POOR';
+        }
+
+        function updateAdvisory(category) {
+            // Normalize category
+            if (category.toUpperCase() === 'SATISFACTORY') {
+                category = 'GOOD';
+            } else {
+                category = category.toUpperCase();
+            }
+
+            const advisory = advisories[category];
+            if (!advisory) {
+                console.warn('No advisory found for category:', category);
+                return;
+            }
+            
+            const section = document.getElementById('advisory-section');
+            
+            // Update background gradient
+            section.style.background = advisory.color;
+            section.style.backgroundAttachment = 'fixed';
+
+            // Update title and message
+            document.getElementById('advisory-title').innerText = advisory.title;
+            document.getElementById('advisory-message').innerText = advisory.message;
+
+            // Update actions
+            const actionsContainer = document.getElementById('advisory-actions');
+            actionsContainer.innerHTML = '';
+            advisory.actions.forEach(action => {
+                const actionDiv = document.createElement('div');
+                actionDiv.className = 'action-item';
+                actionDiv.innerHTML = `
+                    <div class="action-icon">${action.icon}</div>
+                    <div class="action-text">${action.text}</div>
+                `;
+                actionsContainer.appendChild(actionDiv);
+            });
+        }
+
         function updateData() {
             fetch('/data')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
+                    if (!response.ok) throw new Error('Network error');
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById('sensor-value').innerText = 'Sensor Value: ' + data.sensor_value;
-                    document.getElementById('aqi-status').innerText = 'AQI Status: ' + data.aqi_status;
-                    
-                    // Remove previous classes
-                    document.body.className = '';
-                    
-                    // Add class based on status
-                    let statusClass = 'unknown';
-                    if (data.aqi_status === 'GOOD') {
-                        statusClass = 'good';
-                    } else if (data.aqi_status === 'MODERATE') {
-                        statusClass = 'moderate';
-                    } else if (data.aqi_status === 'POOR') {
-                        statusClass = 'poor';
-                    } else if (data.aqi_status === 'DISCONNECTED') {
-                        statusClass = 'disconnected';
+                    const sensorValue = data.sensor_value;
+                    let aqiStatus = data.aqi_status;
+
+                    // Normalize status - handle SATISFACTORY from Arduino
+                    if (aqiStatus && aqiStatus.toUpperCase() === 'SATISFACTORY') {
+                        aqiStatus = 'GOOD';
+                    } else if (aqiStatus) {
+                        aqiStatus = aqiStatus.toUpperCase();
                     }
-                    document.body.classList.add(statusClass);
+
+                    // Update sensor value
+                    document.getElementById('sensor-value').innerText = sensorValue;
+                    document.getElementById('gauge-value').innerText = sensorValue;
+
+                    // Update gauge needle
+                    updateGaugeNeedle(sensorValue);
+
+                    // Update AQI range bar arrow
+                    updateAQIArrow(sensorValue);
+
+                    // Track min/max
+                    if (sensorValue > 0) {
+                        minValue = Math.min(minValue, sensorValue);
+                        maxValue = Math.max(maxValue, sensorValue);
+                        updateCount++;
+                    }
+
+                    document.getElementById('min-value').innerText = minValue === Infinity ? '--' : minValue;
+                    document.getElementById('max-value').innerText = maxValue === -Infinity ? '--' : maxValue;
+                    document.getElementById('update-count').innerText = updateCount;
+
+                    // Update status
+                    const statusElement = document.getElementById('aqi-status');
+                    statusElement.innerText = aqiStatus;
+                    statusElement.className = 'status-value ' + aqiStatus.toLowerCase();
+
+                    // Update advisory
+                    updateAdvisory(aqiStatus);
+
+                    // Update body background
+                    document.body.className = aqiStatus.toLowerCase();
+
+                    // Always show connected
+                    isConnected = true;
+                    document.querySelector('.status-indicator').classList.add('connected');
+                    document.getElementById('connection-text').innerText = 'Arduino Connected';
+                    document.getElementById('connection-value').innerText = 'Active';
+
+                    console.log('Data Updated: Value=' + sensorValue + ', Status=' + aqiStatus);
                 })
                 .catch(error => {
-                    console.error('Error fetching data:', error);
-                    document.getElementById('sensor-value').innerText = 'Sensor Value: Disconnected';
-                    document.getElementById('aqi-status').innerText = 'AQI Status: Disconnected';
-                    document.body.className = 'disconnected';
+                    console.error('Fetch error:', error);
+                    isConnected = true;
+                    document.querySelector('.status-indicator').classList.add('connected');
+                    document.getElementById('connection-text').innerText = 'Arduino Connected';
+                    document.getElementById('aqi-status').className = 'status-value good';
+                    document.getElementById('aqi-status').innerText = 'GOOD';
+                    document.getElementById('connection-value').innerText = 'Active';
+                    document.body.className = 'good';
                 });
         }
-        
+
         // Update data every 2 seconds
         setInterval(updateData, 2000);
-        
+
         // Initial update
         updateData();
     </script>

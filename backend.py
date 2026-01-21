@@ -12,6 +12,14 @@ SERIAL_PORT = None
 
 def find_arduino_port():
     """Auto-detect Arduino on available COM ports"""
+    # Always try COM3 first
+    try:
+        test_ser = serial.Serial('COM3', BAUD_RATE, timeout=0.5)
+        test_ser.close()
+        return 'COM3'
+    except:
+        pass
+    
     import serial.tools.list_ports
     try:
         ports = serial.tools.list_ports.comports()
@@ -23,7 +31,7 @@ def find_arduino_port():
             return ports[0].device
     except:
         pass
-    return None
+    return 'COM3'
 
 def open_serial_port():
     global ser, SERIAL_PORT
@@ -33,17 +41,6 @@ def open_serial_port():
         
         # Try to find Arduino port automatically
         port = find_arduino_port()
-        if port is None:
-            # Fallback to trying common ports
-            for p in ['COM3', 'COM4', 'COM5', 'COM1', 'COM2']:
-                try:
-                    test_ser = serial.Serial(p, BAUD_RATE, timeout=0.5)
-                    test_ser.close()
-                    port = p
-                    break
-                except:
-                    continue
-        
         if port is None:
             print("No serial port found. Running in demo mode")
             return False
@@ -75,7 +72,14 @@ def read_serial():
                             if len(parts) == 2:
                                 try:
                                     sensor_value = int(parts[0])
-                                    status = parts[1].strip()
+                                    # Determine status based on sensor value
+                                    if sensor_value <= 100:
+                                        status = 'GOOD'
+                                    elif sensor_value <= 200:
+                                        status = 'MODERATE'
+                                    else:
+                                        status = 'POOR'
+                                    
                                     latest_data['sensor_value'] = sensor_value
                                     latest_data['aqi_status'] = status
                                     print(f"Data received: {sensor_value}, {status}")
